@@ -10,10 +10,10 @@
 <body>
 <h1>RPG admin panel</h1>
 <h2>Account list:</h2>
-<div id="dropdownlist">Count per page: </div>
+<div id="dropdownlist">Count per page:</div>
 
 <table id="table" border="1">
-    <thead>
+    <thead id="tHead">
     <tr>
         <th>#</th>
         <th>Name</th>
@@ -25,15 +25,15 @@
         <th>Banned</th>
     </tr>
     </thead>
-    <tbody>
+    <tbody id="tBody">
 
     </tbody>
 </table>
-    <div id="navigation">
-        Pages:
-        <button>1</button>
+<div id="navigation">
+    Pages:
+    <!--        <button>1</button>-->
 
-    </div>
+</div>
 
 <script>
     let accountCount;
@@ -45,25 +45,8 @@
     $.ajax({
         type: "GET",
         url: "/rest/players",
-        success: function (message) {
-            const tab = document.getElementById("table");
-            const { DateTime } = luxon;
-
-            for(let i=0; i<message.length; i++) {
-
-                let date = DateTime.fromMillis(message[i].birthday);
-                let formattedDate = date.toFormat('M/d/yyyy');
-                let row = document.createElement("tr");
-                row.innerHTML =`<td>${message[i].id}</td>
-                                <td>${message[i].name}</td>
-                                <td>${message[i].title}</td>
-                                <td>${message[i].race}</td>
-                                <td>${message[i].profession}</td>
-                                <td>${message[i].level}</td>
-                                <td>${formattedDate}</td>
-                                <td>${message[i].banned}</td>`;
-                tab.appendChild(row);
-            }
+        success: function () {
+            updateTable(0,3)
         }
     });
 
@@ -72,17 +55,17 @@
         type: "GET",
         url: "/rest/players/count",
 
-        success: function(msg){
+        success: function (msg) {
             accountCount = msg;
         }
     });
     let select = document.createElement("select");
-    let options = ["3","5","10","20"];
-    for(let i=0; i<options.length; i++){
-    let option = document.createElement("option");
-    option.value = options[i];
-    option.textContent = options[i];
-    select.appendChild(option);
+    let options = ["3", "5", "10", "20"];
+    for (let i = 0; i < options.length; i++) {
+        let option = document.createElement("option");
+        option.value = options[i];
+        option.textContent = options[i];
+        select.appendChild(option);
     }
     let dropdownlist = document.getElementById("dropdownlist");
     dropdownlist.appendChild(select);
@@ -91,14 +74,73 @@
         const selectedValue = select.value;
         dropdownAction(selectedValue);
     })
-    function  dropdownAction(value){
-        switch (value){
+
+    function dropdownAction(value) {
+        switch (value) {
             case "3":
-                alert("Players loaded successfully!");
+                updateTable(0, 3)
+                break;
+            case "5":
+                updateTable(0, 5)
+                break;
+            case "10":
+                updateTable(0, 10)
+                break;
+            case "20":
+                updateTable(0, 20)
                 break;
             default:
                 alert("default");
         }
+    }
+
+    function updateNavigation(pageSize) {
+        const nav = document.getElementById("navigation")
+        nav.innerHTML = "";
+        let btnCount = Math.ceil(accountCount / pageSize)
+        for (let i = 0; i < btnCount; i++) {
+            let btn = document.createElement("button")
+            btn.textContent = i + 1;
+            btn.dataset.pageNumber = i;
+            btn.addEventListener("click", function () {
+                btn.classList.add("active");
+                updateTable(i, pageSize);
+            });
+            nav.appendChild(btn);
+        }
+
+    }
+
+    function updateTable(pageNumber, pageSize) {
+        const tab = document.getElementById("tBody");
+        tab.innerHTML = null;
+        $.ajax({
+            type: "GET",
+            url: `/rest/players?pageNumber=${pageNumber}&pageSize=${pageSize}`,
+            success: function (message) {
+                const tab = document.getElementById("tBody");
+                const {DateTime} = luxon;
+
+                for (let i = 0; i < message.length; i++) {
+
+                    let date = DateTime.fromMillis(message[i].birthday);
+                    let formattedDate = date.toFormat('M/d/yyyy');
+                    let row = document.createElement("tr");
+                    row.innerHTML = `<td>${message[i].id}</td>
+                                <td>${message[i].name}</td>
+                                <td>${message[i].title}</td>
+                                <td>${message[i].race}</td>
+                                <td>${message[i].profession}</td>
+                                <td>${message[i].level}</td>
+                                <td>${formattedDate}</td>
+                                <td>${message[i].banned}</td>`;
+                    tab.appendChild(row);
+                }
+                updateNavigation(pageSize)
+            }
+        });
+
+
     }
 
 
