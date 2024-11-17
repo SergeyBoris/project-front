@@ -30,6 +30,7 @@
     </tbody>
 </table>
 <div id="navigation">
+
     Pages:
     <!--        <button>1</button>-->
 
@@ -96,17 +97,22 @@
 
     function updateNavigation(pageSize) {
         const nav = document.getElementById("navigation")
-        nav.innerHTML = "";
         let btnCount = Math.ceil(accountCount / pageSize)
-        for (let i = 0; i < btnCount; i++) {
-            let btn = document.createElement("button")
-            btn.textContent = i + 1;
-            btn.dataset.pageNumber = i;
-            btn.addEventListener("click", function () {
-                btn.classList.add("active");
-                updateTable(i, pageSize);
-            });
-            nav.appendChild(btn);
+        if(nav.children.length != btnCount) {
+            nav.innerHTML = "";
+            let btnCount = Math.ceil(accountCount / pageSize)
+            for (let i = 0; i < btnCount; i++) {
+                let btn = document.createElement("button")
+                btn.textContent = i + 1;
+                btn.dataset.pageNumber = i;
+                // btn.classList.add("active");
+                btn.addEventListener("click", function () {
+                      Array.from(nav.children).forEach(button => button.classList.remove("active"));
+                    this.classList.add("active");
+                    updateTable(i, pageSize);
+                });
+                nav.appendChild(btn);
+            }
         }
 
     }
