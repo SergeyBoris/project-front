@@ -1,11 +1,107 @@
 <html>
 <head>
+
     <title>RPG</title>
-    <script src=https://code.jquery.com/jquery-3.6.0.min.js></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/luxon/3.4.3/luxon.min.js"></script>
+
     <link href="/css/my.css" rel="stylesheet">
 </head>
 <body>
 <h1>RPG admin panel</h1>
+<h2>Account list:</h2>
+<div id="dropdownlist">Count per page: </div>
 
+<table id="table" border="1">
+    <thead>
+    <tr>
+        <th>#</th>
+        <th>Name</th>
+        <th>Title</th>
+        <th>Race</th>
+        <th>Profession</th>
+        <th>Level</th>
+        <th>Birthday</th>
+        <th>Banned</th>
+    </tr>
+    </thead>
+    <tbody>
+
+    </tbody>
+</table>
+    <div id="navigation">
+        Pages:
+        <button>1</button>
+
+    </div>
+
+<script>
+    let accountCount;
+    let pageNumber;
+    let pageSize;
+    let chosenOption;
+
+
+    $.ajax({
+        type: "GET",
+        url: "/rest/players",
+        success: function (message) {
+            const tab = document.getElementById("table");
+            const { DateTime } = luxon;
+
+            for(let i=0; i<message.length; i++) {
+
+                let date = DateTime.fromMillis(message[i].birthday);
+                let formattedDate = date.toFormat('M/d/yyyy');
+                let row = document.createElement("tr");
+                row.innerHTML =`<td>${message[i].id}</td>
+                                <td>${message[i].name}</td>
+                                <td>${message[i].title}</td>
+                                <td>${message[i].race}</td>
+                                <td>${message[i].profession}</td>
+                                <td>${message[i].level}</td>
+                                <td>${formattedDate}</td>
+                                <td>${message[i].banned}</td>`;
+                tab.appendChild(row);
+            }
+        }
+    });
+
+
+    $.ajax({
+        type: "GET",
+        url: "/rest/players/count",
+
+        success: function(msg){
+            accountCount = msg;
+        }
+    });
+    let select = document.createElement("select");
+    let options = ["3","5","10","20"];
+    for(let i=0; i<options.length; i++){
+    let option = document.createElement("option");
+    option.value = options[i];
+    option.textContent = options[i];
+    select.appendChild(option);
+    }
+    let dropdownlist = document.getElementById("dropdownlist");
+    dropdownlist.appendChild(select);
+
+    select.addEventListener("change", function () {
+        const selectedValue = select.value;
+        dropdownAction(selectedValue);
+    })
+    function  dropdownAction(value){
+        switch (value){
+            case "3":
+                alert("Players loaded successfully!");
+                break;
+            default:
+                alert("default");
+        }
+    }
+
+
+</script>
 </body>
 </html>
