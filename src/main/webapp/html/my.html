@@ -1,4 +1,4 @@
-<html>
+<html xmlns="http://www.w3.org/1999/html">
 <head>
 
     <title>RPG</title>
@@ -32,18 +32,50 @@
 
     </tbody>
 </table>
+
 <div id="navigation">
 
     Pages:
     <!--        <button>1</button>-->
 
 </div>
-
+<hr>
+<h2>Create new account:</h2>
+<label>
+    Name
+    <input type="text" maxlength="12" id="newName"/><br/>
+    Title
+    <input type="text" maxlength="30" id="newTitle"/><br/>
+    Race
+    <select id="newRace"></select><br/>
+    Profession
+    <select id="newProfession"></select><br/>
+    Level
+    <input type="number" min="1" max="100" id="newLevel"/><br/>
+    Birthday
+    <input type="date" id="newBirthday"/><br/>
+    Banned
+    <select id="newBanned"></select><br/>
+</label>
+<button id="saveBtn">Save</button>
 <script>
     let accountCount;
     let pageNumber = 1;
     let pageSize = 3;
     let chosenOption;
+    let chooseBan = document
+
+    let banned = document.getElementById("newBanned");
+    let trueOption = document.createElement("option");
+    trueOption.value = "true";
+    trueOption.textContent = "true";
+    let falseOption = document.createElement("option");
+    falseOption.value = "false";
+    falseOption.textContent = "false";
+    banned.appendChild(falseOption);
+    banned.appendChild(trueOption);
+
+
     const raceOptions = [
         "HUMAN",
         "DWARF",
@@ -53,14 +85,16 @@
         "TROLL",
         "HOBBIT"
     ];
-    let selectRace = document.createElement("select")
-        raceOptions.forEach(optionText => {
-            let option = document.createElement("option");
-            option.value = optionText;
-            option.textContent = optionText;
-            selectRace.appendChild(option);
-        });
-    const profession  = [
+    let selectRace = document.getElementById("newRace")
+
+
+    raceOptions.forEach(optionText => {
+        let option = document.createElement("option");
+        option.value = optionText;
+        option.textContent = optionText;
+        selectRace.appendChild(option);
+    });
+    const profession = [
         "WARRIOR",
         "ROGUE",
         "SORCERER",
@@ -70,7 +104,8 @@
         "WARLOCK",
         "DRUID"
     ]
-    let selectProfession = document.createElement("select")
+    let selectProfession = document.getElementById("newProfession")
+
     profession.forEach(optionText => {
         let option = document.createElement("option");
         option.value = optionText;
@@ -227,11 +262,12 @@
                     if (i !== 0 && i !== 5 && i !== 6) {
 
                         let inputField = document.getElementById(`inputField${i}`);
-                        console.info(inputField)
-                        currentValue = inputField.value
+
+                        currentValue = inputField.value;
                         inputField.innerHTML = "";
                         cell.removeChild(inputField);
                         cell.textContent = currentValue;
+
                     }
 
                 }
@@ -242,15 +278,14 @@
                 $.ajax({
                     type: 'POST',
                     url: `/rest/players/${id}`,
-                    contentType: 'application/json', // Тип передаваемых данных
-                    data: JSON.stringify(data),     // Преобразование объекта в JSON
+                    contentType: 'application/json',
+                    data: JSON.stringify(data),
                     success: function (response) {
-                        console.log('Response from server:', response);
-                        alert('Player created successfully!');
+                        alert('Player edit successfully!');
                     },
                     error: function (error) {
                         console.error('Error during request:', error);
-                        alert('Failed to create player.');
+                        alert('Failed to edit player.');
                     }
                 });
                 return;
@@ -267,15 +302,35 @@
                         inputField.id = `inputField${i}`;
                         cell.appendChild(inputField);
                     } else if (i === 3) {
-                        selectRace.value = currentValue;
+                        const editRace = document.createElement("select");
+                        raceOptions.forEach(optionText => {
+                            const option = document.createElement("option");
+                            option.value = optionText;
+                            option.textContent = optionText;
+                            if (optionText === currentValue) {
+                                option.selected = true;
+                            }
+                            editRace.appendChild(option);
+                        });
                         cell.innerHTML = "";
-                        cell.appendChild(selectRace);
-                        selectRace.id = `inputField${i}`;
-                    } else if (i===4){
-                        selectProfession.value=currentValue;
-                        cell.innerHTML="";
-                        cell.appendChild(selectProfession);
-                        selectProfession.id = `inputField${i}`;
+                        cell.appendChild(editRace);
+
+                        editRace.id = `inputField${i}`;
+                    } else if (i === 4) {
+                        const editProfession = document.createElement("select");
+                        profession.forEach(optionText => {
+                            const option = document.createElement("option");
+                            option.value = optionText;
+                            option.textContent = optionText;
+                            if (optionText === currentValue) {
+                                option.selected = true;
+                            }
+                            editProfession.appendChild(option);
+                        });
+
+                        cell.innerHTML = "";
+                        cell.appendChild(editProfession);
+                        editProfession.id = `inputField${i}`;
 
                     }
 
@@ -301,6 +356,50 @@
         }
         return data;
 
+    }
+
+    document.getElementById("saveBtn").addEventListener("click", function () {
+        console.info(document.getElementById("newName").value);
+        let date = Date.parse(document.getElementById("newBirthday").value);
+        console.info(date)
+        let data = {
+
+            name: document.getElementById("newName").value,
+            title: document.getElementById("newTitle").value,
+            race: document.getElementById("newRace").value,
+            profession: document.getElementById("newProfession").value,
+            birthday: date,
+            banned: document.getElementById("newBanned").value,
+            level: document.getElementById("newLevel").value
+
+        }
+        console.info(data);
+        $.ajax({
+            type: 'POST',
+            url: `/rest/players`,
+            contentType: 'application/json',
+            data: JSON.stringify(data),
+            success: function (response) {
+                alert('Player create successfully!');
+                updateNavigation(pageSize);
+                updateTable(pageNumber, pageSize);
+                clearNew();
+            },
+            error: function (error) {
+                console.error('Error during request:', error);
+                alert('Failed to create player.');
+            }
+        });
+    });
+
+    function clearNew() {
+        document.getElementById("newName").value = "";
+        document.getElementById("newTitle").value = "";
+        document.getElementById("newRace").value = "";
+        document.getElementById("newProfession").value = "";
+        document.getElementById("newBirthday").value = "";
+        document.getElementById("newBanned").value = "false";
+        document.getElementById("newLevel").value = "";
     }
 
 
