@@ -23,6 +23,9 @@
         <th>Level</th>
         <th>Birthday</th>
         <th>Banned</th>
+        <th>Edit</th>
+        <th>Delete</th>
+
     </tr>
     </thead>
     <tbody id="tBody">
@@ -38,16 +41,51 @@
 
 <script>
     let accountCount;
-    let pageNumber;
-    let pageSize;
+    let pageNumber = 1;
+    let pageSize = 3;
     let chosenOption;
+    const raceOptions = [
+        "HUMAN",
+        "DWARF",
+        "ELF",
+        "GIANT",
+        "ORC",
+        "TROLL",
+        "HOBBIT"
+    ];
+    let selectRace = document.createElement("select")
+        raceOptions.forEach(optionText => {
+            let option = document.createElement("option");
+            option.value = optionText;
+            option.textContent = optionText;
+            selectRace.appendChild(option);
+        });
+    const profession  = [
+        "WARRIOR",
+        "ROGUE",
+        "SORCERER",
+        "CLERIC",
+        "PALADIN",
+        "NAZGUL",
+        "WARLOCK",
+        "DRUID"
+    ]
+    let selectProfession = document.createElement("select")
+    profession.forEach(optionText => {
+        let option = document.createElement("option");
+        option.value = optionText;
+        option.textContent = optionText;
+        selectProfession.appendChild(option);
+    });
+
+    console.info(selectRace);
 
 
     $.ajax({
         type: "GET",
         url: "/rest/players",
         success: function () {
-            updateTable(0,3)
+            updateTable(0, 3)
         }
     });
 
@@ -79,16 +117,20 @@
     function dropdownAction(value) {
         switch (value) {
             case "3":
-                updateTable(0, 3)
+                pageSize = 3
+                updateTable(0, pageSize)
                 break;
             case "5":
-                updateTable(0, 5)
+                pageSize = 5
+                updateTable(0, pageSize)
                 break;
             case "10":
-                updateTable(0, 10)
+                pageSize = 10
+                updateTable(0, pageSize)
                 break;
             case "20":
-                updateTable(0, 20)
+                pageSize = 20
+                updateTable(0, pageSize)
                 break;
             default:
                 alert("default");
@@ -98,7 +140,7 @@
     function updateNavigation(pageSize) {
         const nav = document.getElementById("navigation")
         let btnCount = Math.ceil(accountCount / pageSize)
-        if(nav.children.length != btnCount) {
+        if (nav.children.length != btnCount) {
             nav.innerHTML = "";
             let btnCount = Math.ceil(accountCount / pageSize)
             for (let i = 0; i < btnCount; i++) {
@@ -107,8 +149,9 @@
                 btn.dataset.pageNumber = i;
                 // btn.classList.add("active");
                 btn.addEventListener("click", function () {
-                      Array.from(nav.children).forEach(button => button.classList.remove("active"));
+                    Array.from(nav.children).forEach(button => button.classList.remove("active"));
                     this.classList.add("active");
+                    pageNumber = i;
                     updateTable(i, pageSize);
                 });
                 nav.appendChild(btn);
@@ -139,13 +182,124 @@
                                 <td>${message[i].profession}</td>
                                 <td>${message[i].level}</td>
                                 <td>${formattedDate}</td>
-                                <td>${message[i].banned}</td>`;
+                                <td>${message[i].banned}</td>
+                                <td><img src= "/img/edit.png" class="editImage"> </td>
+                                <td><img src = "/img/delete.png" class="deleteImage"</td>`;
                     tab.appendChild(row);
                 }
                 updateNavigation(pageSize)
             }
         });
 
+
+    }
+
+    function deleteUser(id) {
+        $.ajax({
+            type: "DELETE",
+            url: `/rest/players/${id}`,
+            success: function () {
+                updateTable(pageNumber, pageSize)
+            }
+
+
+        });
+    }
+
+    document.getElementById("table").addEventListener("click", function (event) {
+        if (event.target && event.target.classList.contains("deleteImage")) {
+            const thisRow = event.target.closest("tr");
+            const thisId = thisRow.children.item(0).textContent;
+
+            deleteUser(thisId);
+        }
+    });
+    document.getElementById("table").addEventListener("click", function editUser(event) {
+        if (event.target && event.target.classList.contains("editImage")) {
+            let img = event.target;
+            let row = img.closest("tr");
+
+
+            if (img.src.includes("/img/save.png")) { // если картинка save
+                for (let i = 0; i < row.cells.length - 2; i++) {
+                    let cell = row.cells[i];
+                    let currentValue = cell.textContent;
+                    if (i !== 0 && i !== 5 && i !== 6) {
+
+                        let inputField = document.getElementById(`inputField${i}`);
+                        console.info(inputField)
+                        currentValue = inputField.value
+                        inputField.innerHTML = "";
+                        cell.removeChild(inputField);
+                        cell.textContent = currentValue;
+                    }
+
+                }
+                img.src = "/img/edit.png";
+                let id = row.cells[0].textContent;
+                let data = getData(row);
+                console.info(JSON.stringify(data))
+                $.ajax({
+                    type: 'POST',
+                    url: `/rest/players/${id}`,
+                    contentType: 'application/json', // Тип передаваемых данных
+                    data: JSON.stringify(data),     // Преобразование объекта в JSON
+                    success: function (response) {
+                        console.log('Response from server:', response);
+                        alert('Player created successfully!');
+                    },
+                    error: function (error) {
+                        console.error('Error during request:', error);
+                        alert('Failed to create player.');
+                    }
+                });
+                return;
+            }
+            if (img.src.includes("/img/edit.png")) { // если картинка редактирования
+                for (let i = 0; i < row.cells.length - 2; i++) {
+                    let cell = row.cells[i];
+                    let currentValue = cell.textContent;
+                    if (i !== 0 && i !== 5 && i !== 6 && i !== 3 && i !== 4) {
+
+                        let inputField = document.createElement("input");
+                        inputField.value = currentValue;
+                        cell.innerHTML = "";
+                        inputField.id = `inputField${i}`;
+                        cell.appendChild(inputField);
+                    } else if (i === 3) {
+                        selectRace.value = currentValue;
+                        cell.innerHTML = "";
+                        cell.appendChild(selectRace);
+                        selectRace.id = `inputField${i}`;
+                    } else if (i===4){
+                        selectProfession.value=currentValue;
+                        cell.innerHTML="";
+                        cell.appendChild(selectProfession);
+                        selectProfession.id = `inputField${i}`;
+
+                    }
+
+                }
+                img.src = "/img/save.png";
+            }
+
+        }
+
+    });
+
+    function getData(row) {
+        let data = {
+            //  id : row.cells[0].textContent,
+            name: row.cells[1].textContent,
+            title: row.cells[2].textContent,
+            race: row.cells[3].textContent,
+            profession: row.cells[4].textContent,
+            //   level : row.cells[5].textContent,
+            //    birthday : row.cells[6].textContent,
+            banned: row.cells[7].textContent
+
+        }
+        return data;
 
     }
 
